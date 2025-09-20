@@ -1,0 +1,62 @@
+import requests
+import xml.etree.ElementTree as ET
+import json
+from datetime import datetime
+
+# Muse.ai MRSS feed URL
+MRSS_URL = "https://muse.ai/collections/AW7Tcqo/mrss"
+
+# Output Roku JSON feed file
+OUTPUT_FILE = "feed.json"
+
+def convert_mrss_to_roku():
+response = requests.get(MRSS_URL)
+response.raise_for_status()
+root = ET.fromstring(response.content)
+
+items = []
+for item in root.findall(".//item"):
+title = item.findtext("title", "Untitled")
+description = item.findtext("description", "No description available.")
+thumbnail = None
+media_thumbnail = item.find("{http://search.yahoo.com/mrss/}thumbnail")
+if media_thumbnail is not None:
+thumbnail = media_thumbnail.attrib.get("url")
+
+media_content = item.find("{http://search.yahoo.com/mrss/}content")
+video_url = media_content.attrib.get("url") if media_content is not None else None
+
+if video_url:
+items.append({
+"id": title.replace(" ", "_").lower(),
+"title": title,
+"shortDescription": description[:200],
+"thumbnail": thumbnail or "https://via.placeholder.com/300x200.png?text=Raygun+TV",
+"content": {
+"dateAdded": datetime.utcnow().isoformat() + "Z",
+"videos": [
+{
+"url": video_url,
+"quality": "HD",
+"videoType": "MP4"
+}
+],
+"duration": 0
+},
+"categories": ["Movies"]
+})
+
+roku_feed = {
+"providerName": "Raygun TV",
+"lastUpdated": datetime.utcnow().isoformat() + "Z",
+"language": "en",
+"movies": items
+}
+
+with open(OUTPUT_FILE, "w") as f:
+json.dump(roku_feed, f, indent=2)
+
+print(f"Feed generated: {OUTPUT_FILE}")
+
+if __name__ == "__main__":
+convert_mrss_to_roku()
