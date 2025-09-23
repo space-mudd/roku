@@ -6,7 +6,6 @@ from datetime import datetime
 # Muse.ai MRSS feed URL
 MRSS_URL = "https://muse.ai/collections/AW7Tcqo/mrss"
 
-# 👇 This is where your JSON file will be saved
 OUTPUT_FILE = "feed.json"
 
 def convert_mrss_to_roku():
